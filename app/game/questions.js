@@ -1,5 +1,6 @@
 /*
   questions.js
+  @flow
 
   A question is a game mode, which poses a question, and calculates the
   corresponding answer.
@@ -7,11 +8,28 @@
 
 var Poker = require('../poker');
 
-class Question {
-  constructor() {
-    this.question = {};
-    this.answer = {};
-  }
+type Question = {
+  question: string,
+  table: Array<Poker.Card>,
+  player: Poker.Player,
+  players: number,
+  percent: number,
+  pointsWon: number
+};
+
+type Answer = {
+  winningHands: Array<Poker.HandResult>,
+  losingHands: Array<Poker.HandResult>,
+  question: string
+}
+
+class Problem {
+  result: Poker.Result;
+
+  question: Question;
+  answer: Answer;
+
+  getScore(guess: number, level: number): number { return 0; };
 }
 
 function computeScoreLogarithm(estimate, answer) {
@@ -27,8 +45,9 @@ function computeScore(estimate, answer, level) {
   return Math.max(-500, result);
 }
 
-class WinQuestion {
+class WinQuestion extends Problem {
   constructor() {
+    super();
     var game = new Poker.Game();
 
     // Choose a random number of players.
@@ -61,9 +80,9 @@ class WinQuestion {
   }
 }
 
-class WinOrTieQuestion {
+class WinOrTieQuestion extends Problem {
   constructor() {
-
+    super();
     var game = new Poker.Game();
 
     // Choose a random number of players.
@@ -98,8 +117,11 @@ class WinOrTieQuestion {
 }
 
 // Odds of losing to a specific play, e.g. straight.
-class SpecificLoseQuestion {
+class SpecificLoseQuestion extends Problem {
+  method: Poker.HandResult;
+
   constructor() {
+    super();
 
     var game = new Poker.Game();
 
@@ -139,8 +161,12 @@ class SpecificLoseQuestion {
   }
 }
 
-class SpecificWinQuestion {
+class SpecificWinQuestion extends Problem {
+  method: Poker.HandResult;
+
   constructor() {
+    super();
+
     var game = new Poker.Game();
 
     // Choose a random number of players.
@@ -179,8 +205,9 @@ class SpecificWinQuestion {
   }
 }
 
-class LoseQuestion {
+class LoseQuestion extends Problem {
   constructor() {
+    super();
     var game = new Poker.Game();
 
     // Choose a random number of players.
@@ -222,9 +249,12 @@ var QuestionRoster = [
   SpecificWinQuestion
 ];
 
-function generateQuestion(level) {
+function GenerateQuestion(level: number) {
   var availableQuestions = QuestionRoster.slice(0,level)
   return new availableQuestions[Math.floor(Math.random() * availableQuestions.length)](level);
 }
 
-module.exports = generateQuestion;
+module.exports = {
+  GenerateQuestion,
+  Problem
+};

@@ -1,5 +1,6 @@
 /*
   poker.js
+  @flow
 */
 
 var STRAIGHT_FLUSH = 0;
@@ -11,6 +12,7 @@ var THREE_OF_A_KIND= 5;
 var TWO_PAIRS      = 6;
 var TWO_OF_A_KIND  = 7;
 var ONE_OF_A_KIND  = 8;
+var KICKERS        = 9;
 
 var hierarchy = [
   "Straight flush",
@@ -30,6 +32,14 @@ var ofAKind = [
   THREE_OF_A_KIND,
   FOUR_OF_A_KIND
 ]
+
+type Result = {
+  win: number,
+  tie: number,
+  loss: number,
+  winningHands: Array<HandResult>,
+  losingHands: Array<HandResult>
+}
 
 var valueStringToInteger = {'J': 11, 'Q': 12, 'K': 13, 'A': 14};
 for(var i=0;i<10;i++) {
@@ -65,8 +75,6 @@ function containsFlush(cards) {
   return false;
 }
 
-// If you pass "aceLow", we'll check it using the ace
-// as a low card. You have to try both.
 function containsStraight(cards) {
   if(!cards) return false;
 
@@ -134,9 +142,20 @@ function containsOfAKind(cards, max=4) {
   return bestCards.slice(0,max);
 }
 
-function evaluateCards(cards) {
-  var score = [ 0, 0, 0, 0, 0, 0, 0, 0, 0 ];
-  var selectedCards = [];
+type EvaluationResult = {
+    score: number,
+    cards: Array<Card>,
+    repr: string
+};
+
+type HandResult = {
+  probability: number,
+  name: string
+};
+
+function evaluateCards(cards: Array<Card>) : EvaluationResult {
+  var score = [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ];
+  var selectedCards: Array<Card> = [];
 
   // Check for a straight flush.
   var straightFlush = containsStraight(containsFlush(cards));
@@ -182,7 +201,17 @@ function evaluateCards(cards) {
   // Check if a full house condition has been met.
   if(score[ofAKind[2]] > 0 && score[ofAKind[1]] > 0) score[FULL_HOUSE] = score[ofAKind[2]];
 
-  var repr;
+  // Add in tiebreaking "kickers". First, sort the selected cards
+  // so that the best value cards are at the top.
+  selectedCards.sort((a, b) => {
+    return b.value - a.value;
+  });
+  // Then throw those into the kickers part of the score array.
+  for(var i=0; i<5; i++) {
+    score[KICKERS+i] = selectedCards[i].value;
+  }
+
+  var repr = "";
   for(var i=0;i<9;i++) {
     repr = hierarchy[i];
     if(score[i] != 0) break;
@@ -198,7 +227,7 @@ function evaluateCards(cards) {
   }
 }
 
-function makeCards(string) {
+function makeCards(string:string) {
   var cards = [];
   var cardReps = string.split(' ');
   for(var i=0;i<cardReps.length;i++) {
@@ -208,7 +237,10 @@ function makeCards(string) {
 }
 
 class Card {
-  constructor(suit, value) {
+  suit: string;
+  value: number;
+
+  constructor(suit:string, value:number) {
     this.suit = suit;
     this.value = value;
   }
@@ -228,6 +260,7 @@ class Card {
 }
 
 class Deck {
+  cards: Array<Card>;
   constructor() {
     this.cards = [];
   }
@@ -277,7 +310,8 @@ class Deck {
 
 
 class Player {
-  constructor(cards) {
+  cards: Array<Card>;
+  constructor(cards: Array<Card>) {
     this.cards = cards;
   }
   repr() {
@@ -286,21 +320,32 @@ class Player {
 }
 
 class Game {
+  deck: Deck;
+  table: Array<Card>;
+  players: Array<Player>;
+  stage: number;
+
   constructor() {
-    this.deck = null;
     this.table = [];
     this.players = [];
     this.stage = 0;
   }
 
-  generate(numberOfPlayers) {
+  generate(numberOfPlayers: number) {
     this.deck = new Deck();
     this.deck.generate();
     this.deck.shuffle();
     this.players = [ new Player(this.deck.deal(2)) ];
 
+    // There's a bit of a subtle point here. Why not deal in the NPCs before
+    // calculating the score? The answer is that if you deal them in first, and
+    // then run the monte carlo, you'll end up with hidden variables which strongly
+    // influence the outcome of the game. You need to consider all possible universes
+    // where the NPCs get dealt different hands, so this must be done inside the
+    // getFinalResult() funciton instead of now. We'll create placeholder characters
+    // with empty hands instead.
     for(var i=0;i<numberOfPlayers-1;i++)
-      this.players.push(null);
+      this.players.push(new Player([]));
   }
 
   copy() {
@@ -336,9 +381,9 @@ class Game {
     for(var i=0;i<3;i++) this.advance();
 
     // Check who won.
-    var scores = [];
-    var bestResult = {score: 0};
-    var myResult = {};
+    var scores : Array<number> = [];
+    var bestResult : EvaluationResult = {score: 0, cards: [], repr: ""};
+    var myResult = {score: 0, cards: [], repr: ""};
     for(var i=0;i<this.players.length;i++) {
       var result = evaluateCards(this.players[i].cards.concat(this.table));
       scores.push(result.score);
@@ -346,7 +391,9 @@ class Game {
       if(i == 0) myResult = result;
     }
 
-    var winningHand = myResult.score>bestResult.score?myResult:bestResult;
+    var winningHand: EvaluationResult = bestResult;
+    if(myResult.score>bestResult.score)
+      winningHand = myResult;
 
     return {
       score: scores[0] - bestResult.score,
@@ -357,12 +404,17 @@ class Game {
   }
 }
 
-function determineChances(game) {
+function determineChances(game: Game) : Result {
   var wins = 0;
   var ties = 0;
   var loss = 0;
-  var winningHands = {};
-  var losingHands = {};
+
+  type HandLikelihoodDictionary = {
+    [t: string]: number
+  }
+
+  var winningHands: HandLikelihoodDictionary = {};
+  var losingHands:  HandLikelihoodDictionary = {};
   for(var i=0;i<1000;i++) {
     var g = game.copy();
     var result = g.getFinalResult();
@@ -381,10 +433,10 @@ function determineChances(game) {
     }
   }
 
-  var wHand = [];
-  var lHand = [];
-  for(key in winningHands) wHand.push({name: key, probability: winningHands[key] / 1000});
-  for(key in losingHands)  lHand.push({name: key, probability: losingHands[key] / 1000});
+  var wHand: Array<HandResult> = [];
+  var lHand: Array<HandResult> = [];
+  for(var key in winningHands) wHand.push({name: key, probability: winningHands[key] / 1000});
+  for(var key in losingHands)  lHand.push({name: key, probability: losingHands[key] / 1000});
 
   wHand.sort((a,b) => {
     return b.probability - a.probability;
@@ -404,6 +456,9 @@ function determineChances(game) {
 
 module.exports = {
   determineChances,
+  evaluateCards,
   Game,
-  Player
+  Player,
+  Card,
+  makeCards
 };

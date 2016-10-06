@@ -1,12 +1,15 @@
 /*
   state.js
-
+  @flow
   Methods for saving and restoring state.
 */
 
 import { AsyncStorage } from 'react-native';
 
 class State {
+  score: number;
+  level: number;
+
   constructor() {
     this.score = 1;
     this.level = 1;
