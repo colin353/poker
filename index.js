@@ -1,13 +1,23 @@
 /**
- * Sample React Native App
- * https://github.com/facebook/react-native
+ * Poker App
+ * https://github.com/colin353/poker
  * @flow
-*
- * Color scheme for the app:
+ *
+ * The purpose of this app is to help you learn how to judge poker odds more accurately,
+ * by giving you different plausible situations and getting you to estimate the odds of
+ * winning. Over time, you start to generate some heuristics for quickly estimating the
+ * odds of winning/losing/tie, which can be a useful tool when playing actual poker.
+ *
+ * The game sets up a situation, for example, a early/mid/late-stage game, with between
+ * two and four players. You're quizzed on the probabilities of certain outcomes, and then
+ * the system runs 1000 simulations of the results of the game. You win or lose points based
+ * upon how close you were to guessing the right answer.
+ *
+ * Color scheme for this app:
  * https://coolors.co/1a090d-4a314d-6b6570-a8ba9a-ace894
  */
 
-import React, { Component } from 'react';
+import { Component } from 'react';
 import {
   AppRegistry,
   StyleSheet,
@@ -21,7 +31,7 @@ import {
 import State from './app/game/state';
 // The tools for evaluating poker hands, dealing, etc.
 import Poker from './app/poker.js';
-import type { HandResult } from './app/poker.js'
+import type { HandResult } from './app/poker.js';
 // Tools for generating questions and answers.
 import { GenerateQuestion, Problem } from './app/game/questions';
 
@@ -29,46 +39,47 @@ import { GenerateQuestion, Problem } from './app/game/questions';
 import { Card, CardPlaceholder } from './app/components/card';
 import Header from './app/components/header';
 
-class poker_app extends Component {
+class PokerApp extends Component {
   state: {
     table: Array<Poker.Card>,
-    question: Poker.Question,
+    question: string,
     level: number,
-    players: number,
-    percent: number,
-    showAnswer: boolean,
+    players: number,    // the number of players
+    percent: number,    // the currently selected percent probability
+    showAnswer: boolean,// whether the answer is being displayed
     points: number,
-    pointsWon: number,
-    popOver: boolean,
+    pointsWon: number,  // number of points won in most recent question
+    popOver: boolean,   // whether the popover is visible
     player: Poker.Player,
     losingHands: Array<HandResult>,
     winningHands: Array<HandResult>
   };
+
   question: Problem;
   gameState: State;
 
   constructor(props) {
     super(props);
     this.state = {
-      question: "",
-      table: [],
-      player: { cards:[] },
-      players: 2,
-      percent: 0,
-      showAnswer: false,
+      question    : "",
+      table       : [],
+      player      : new Poker.Player([]),
+      players     : 2,
+      percent     : 0,
+      showAnswer  : false,
       winningHands: [],
-      losingHands: [],
-      points: 0,
-      pointsWon: 0,
-      level: 0,
-      popOver: false
+      losingHands : [],
+      points      : 0,
+      pointsWon   : 0,
+      level       : 0,
+      popOver     : false
     };
   }
+
   componentDidMount() {
     // Load the saved state.
     this.gameState = new State();
     this.gameState.load().then(() => {
-      console.log("game state:", this.gameState);
       this.setState({
         level : this.gameState.level,
         points: this.gameState.score
@@ -76,7 +87,11 @@ class poker_app extends Component {
       this.generateQuestion(this.state.level);
     });
   }
-  generateQuestion(level:number) {
+
+  // Generate a question based upon the current level, and display it. Also,
+  // save the game state (i.e. the player's score + level) whenever a question
+  // is generated so that it's always up to date.
+  generateQuestion(level: number) {
     this.question = GenerateQuestion(level);
     this.setState(this.question.question);
     this.setState({
@@ -84,6 +99,10 @@ class poker_app extends Component {
     });
     this.gameState.save();
   }
+
+  // This function is called when the user decides to submit their answer. It
+  // calculates the points won, handles level changes, and displays the correct
+  // answer.
   answer() {
     this.setState(this.question.answer);
     var pointsWon = this.question.getScore(Math.round(this.state.percent/5)*5, this.state.level);
@@ -116,12 +135,17 @@ class poker_app extends Component {
     });
     this.gameState.save();
   }
+
   hidePopover() {
     this.setState({popOver: false});
   }
+
+  // This function generates a new question for the user, with a difficulty
+  // adjusted for the current level.
   nextQuestion() {
     this.generateQuestion(this.gameState.level);
   }
+
   render() {
     var percent = Math.round(this.state.percent/5)*5;
     return (
@@ -411,4 +435,4 @@ const styles = StyleSheet.create({
   }
 });
 
-AppRegistry.registerComponent('poker_app', () => poker_app);
+AppRegistry.registerComponent('poker_app', () => PokerApp);

@@ -1,6 +1,9 @@
 /*
   poker.js
   @flow
+
+  This file contains the implementation of the poker board state evaluation program,
+  plus the tools for running monte-carlo simulations of different poker outcomes.
 */
 
 var STRAIGHT_FLUSH = 0;
@@ -31,7 +34,7 @@ var ofAKind = [
   TWO_OF_A_KIND,
   THREE_OF_A_KIND,
   FOUR_OF_A_KIND
-]
+];
 
 export type Result = {
   win: number,

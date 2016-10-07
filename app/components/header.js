@@ -1,7 +1,9 @@
 /*
   header.js
+  @flow
 
-  Header which shows the current level and score.
+  Header which shows the current level and score. It also does animations when
+  the score changes.
 */
 
 import React, { Component } from 'react';
@@ -9,25 +11,42 @@ import {
   StyleSheet,
   View,
   Text,
-  Image,
   Animated,
-  TouchableOpacity
 } from 'react-native';
 
+type Props = {
+  // The progress is the amount of points that you have for the current
+  // level. You need 1000 points to complete a level.
+  progress: number
+};
+
 class Header extends Component {
-  constructor(props) {
+  state: {
+    progress: Animated.Value,
+    progressTextAnimator: Animated.Value,
+    progressText: string
+  }
+  animationInProgress: Animated.Timing
+
+  constructor(props: Props) {
     super(props);
     this.state = {
-      progress: new Animated.Value(this.props.progress),
+      progress            : new Animated.Value(this.props.progress),
       progressTextAnimator: new Animated.Value(this.props.progress),
-      progressText: Math.ceil(this.props.progress*1000)
+      progressText        : Math.ceil(this.props.progress*1000).toString()
     };
 
+    // As the progress animation unfolds, update the text as well as
+    // the length of the progress bar.
     this.state.progressTextAnimator.addListener((result) => {
-      this.setState({progressText: String(Math.ceil(result.value*1000))});
-    })
+      this.setState({progressText: Math.ceil(result.value*1000).toString()});
+    });
   }
-  componentWillReceiveProps(props) {
+
+  // When the progress changes, we'll receive an update to the
+  // props through componentWillReceiveProps.
+  componentWillReceiveProps(props: Props) {
+    // We'll start a new animation in response to the new progress.
     this.animationInProgress = Animated.timing(
       this.state.progress, {
         toValue: props.progress,
@@ -35,34 +54,42 @@ class Header extends Component {
     });
     this.animationInProgress.start();
 
-    textAnimation = Animated.timing(
+    // We'll also run an animation of the text changes.
+    var textAnimation = Animated.timing(
       this.state.progressTextAnimator, {
         toValue: props.progress,
         duration: 1000
     });
     textAnimation.start();
   }
+
   render() {
     return (
       <View style={styles.container}>
-
         <View style={styles.labelBadge}>
           <Text style={styles.labelBadgeText}>{this.props.level}</Text>
         </View>
-
         <View style={styles.progressContainer}>
           <Text style={styles.textProgress}>{this.state.progressText}/1000</Text>
-          <Animated.View style={[styles.progress, {width: this.state.progress.interpolate({
-            inputRange  : [0, 1],
-            outputRange : [0, 275]
-          })}]}></Animated.View>
+          <Animated.View
+            style={[
+              styles.progress,
+              { width: this.state.progress.interpolate({
+                  inputRange  : [0, 1],
+                  outputRange : [0, 275]
+                })
+              }]
+            }>
+            </Animated.View>
         </View>
-
       </View>
     );
   }
 }
 
+Header.propTypes = {
+  progress: React.PropTypes.number.isRequired
+};
 
 const styles = StyleSheet.create({
   container: {

@@ -1,19 +1,20 @@
 /*
   card.js
+  @flow
 
-  This picture represents a card.
+  This component represents a playing card, or a placeholder for one
+  which will eventually be revealed.
 */
 
 
-import React, { Component } from 'react';
+import { Component } from 'react';
 import {
   StyleSheet,
   View,
-  Text,
-  Image,
-  TouchableOpacity
+  Text
 } from 'react-native';
 
+// The card object represents a playing card which has been revealed.
 class Card extends Component {
   render() {
     return (
@@ -25,6 +26,7 @@ class Card extends Component {
   }
 }
 
+// The CardPlaceholder represents a card which hasn't been dealt/revealed yet.
 class CardPlaceholder extends Component {
   render() {
     return (
@@ -62,6 +64,7 @@ const styles = StyleSheet.create({
     textAlign: 'center'
   }
 });
+
 module.exports = {
   Card,
   CardPlaceholder
