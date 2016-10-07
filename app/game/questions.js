@@ -7,6 +7,7 @@
 */
 
 var Poker = require('../poker');
+import type { HandResult, Card, Result } from '../poker';
 
 type Question = {
   question: string,
@@ -18,17 +19,15 @@ type Question = {
 };
 
 type Answer = {
-  winningHands: Array<Poker.HandResult>,
-  losingHands: Array<Poker.HandResult>,
+  winningHands: Array<HandResult>,
+  losingHands: Array<HandResult>,
   question: string
 }
 
 class Problem {
-  result: Poker.Result;
-
+  result: Result;
   question: Question;
   answer: Answer;
-
   getScore(guess: number, level: number): number { return 0; };
 }
 
@@ -118,7 +117,7 @@ class WinOrTieQuestion extends Problem {
 
 // Odds of losing to a specific play, e.g. straight.
 class SpecificLoseQuestion extends Problem {
-  method: Poker.HandResult;
+  method: HandResult;
 
   constructor() {
     super();
@@ -162,8 +161,7 @@ class SpecificLoseQuestion extends Problem {
 }
 
 class SpecificWinQuestion extends Problem {
-  method: Poker.HandResult;
-
+  method: HandResult;
   constructor() {
     super();
 

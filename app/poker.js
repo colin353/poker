@@ -33,7 +33,7 @@ var ofAKind = [
   FOUR_OF_A_KIND
 ]
 
-type Result = {
+export type Result = {
   win: number,
   tie: number,
   loss: number,
@@ -53,7 +53,7 @@ var suitToUnicode = {
   'C': '♣'
 };
 
-function reprCardArray(array) {
+function reprCardArray(array:Array<Card>) {
   var cards = [];
   for(var i=0;i<array.length;i++) cards.push(array[i].reprString());
   return "[" + cards.join(', ') + "]";
@@ -142,37 +142,60 @@ function containsOfAKind(cards, max=4) {
   return bestCards.slice(0,max);
 }
 
-type EvaluationResult = {
-    score: number,
+export type EvaluationResult = {
+    score: Score,
     cards: Array<Card>,
     repr: string
 };
 
-type HandResult = {
+export type HandResult = {
   probability: number,
   name: string
 };
 
+class Score {
+  score : Array<number>;
+
+  constructor() {
+    this.score = [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ];
+  }
+
+  isGreaterThan(score : Score) {
+    for(var i=0; i<this.score.length; i++) {
+      if(this.score[i] > score.score[i]) return true;
+      else if(score.score[i] > this.score[i]) return false;
+    }
+    return false;
+  }
+
+  isEqualTo(score : Score) {
+    for(var i=0; i<this.score.length; i++) {
+      if(this.score[i] != score.score[i]) return false;
+    }
+    return true;
+  }
+}
+
 function evaluateCards(cards: Array<Card>) : EvaluationResult {
-  var score = [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ];
+  var score = new Score();
   var selectedCards: Array<Card> = [];
 
   // Check for a straight flush.
   var straightFlush = containsStraight(containsFlush(cards));
   if(straightFlush) {
-    score[STRAIGHT_FLUSH] = straightFlush.slice(-1)[0].value;
+    score.score[STRAIGHT_FLUSH] = straightFlush.slice(-1)[0].value;
     cards = straightFlush.slice(-5);
   }
   // Check for a flush.
   var flush = containsFlush(cards);
   if(flush) {
-    score[FLUSH] = flush.slice(-1)[0].value;
+    score.score[FLUSH] = flush.slice(-1)[0].value;
     cards = flush.slice(-5);
   }
   // Check for a straight.
   var straight = containsStraight(cards);
   if(straight) {
-    score[STRAIGHT] = straight.slice(-1)[0].value;
+    score.score[STRAIGHT] = straight.slice(-1)[0].value;
     cards = straight.slice(-5);
   }
 
@@ -183,14 +206,14 @@ function evaluateCards(cards: Array<Card>) : EvaluationResult {
     if(newCards.length == 0) break;
 
     // Check if the two pair condition has been met.
-    if(newCards.length == 2 && score[ofAKind[1]] > 0) {
-      score[TWO_PAIRS] =
-        Math.max(newCards[0].value, score[ofAKind[1]]) +
-        0.01 * Math.min(newCards[0].value, score[ofAKind[1]])
+    if(newCards.length == 2 && score.score[ofAKind[1]] > 0) {
+      score.score[TWO_PAIRS] =
+        Math.max(newCards[0].value, score.score[ofAKind[1]]) +
+        0.01 * Math.min(newCards[0].value, score.score[ofAKind[1]])
     }
 
-    if(score[ofAKind[newCards.length-1]] == 0)
-      score[ofAKind[newCards.length-1]] = newCards[0].value;
+    if(score.score[ofAKind[newCards.length-1]] == 0)
+      score.score[ofAKind[newCards.length-1]] = newCards[0].value;
 
     selectedCards = selectedCards.concat(newCards);
     cards = cards.filter((c) => {
@@ -199,7 +222,7 @@ function evaluateCards(cards: Array<Card>) : EvaluationResult {
   }
 
   // Check if a full house condition has been met.
-  if(score[ofAKind[2]] > 0 && score[ofAKind[1]] > 0) score[FULL_HOUSE] = score[ofAKind[2]];
+  if(score.score[ofAKind[2]] > 0 && score.score[ofAKind[1]] > 0) score.score[FULL_HOUSE] = score.score[ofAKind[2]];
 
   // Add in tiebreaking "kickers". First, sort the selected cards
   // so that the best value cards are at the top.
@@ -208,20 +231,18 @@ function evaluateCards(cards: Array<Card>) : EvaluationResult {
   });
   // Then throw those into the kickers part of the score array.
   for(var i=0; i<5; i++) {
-    score[KICKERS+i] = selectedCards[i].value;
+    score.score[KICKERS+i] = selectedCards[i].value;
   }
 
   var repr = "";
   for(var i=0;i<9;i++) {
     repr = hierarchy[i];
-    if(score[i] != 0) break;
+    if(score.score[i] != 0) break;
   }
 
   // Compactify the score.
   return {
-    score: score.reduce((p, c, i) => {
-      return p + Math.pow(100, 8-i) * c;
-    }),
+    score: score,
     cards: selectedCards,
     repr: repr
   }
@@ -231,7 +252,7 @@ function makeCards(string:string) {
   var cards = [];
   var cardReps = string.split(' ');
   for(var i=0;i<cardReps.length;i++) {
-    cards.push(new Card(cardReps[i][1], valueStringToInteger[cardReps[i][0]]));
+    cards.push(new Card(cardReps[i].slice(-1), valueStringToInteger[cardReps[i].slice(0,-1)]));
   }
   return cards;
 }
@@ -248,6 +269,16 @@ class Card {
   valueString() {
     if(this.value < 11) return String(this.value);
     else return ["J", "Q", "K", "A"][this.value - 11];
+  }
+
+  matchesCard(card:Card) {
+    return card.value == this.value && card.suit == this.suit;
+  }
+
+  matchesCards(cards : Array<Card>) {
+    for(var c of cards)
+      if(this.matchesCard(c)) return true;
+    return false;
   }
 
   reprString() {
@@ -278,8 +309,8 @@ class Deck {
     return d;
   }
 
-  deal(number) {
-    var cards = [];
+  deal(number:number) {
+    var cards : Array<Card> = [];
     for(var i=0;i<number;i++)
       cards.push(this.cards.pop())
     return cards;
@@ -324,11 +355,13 @@ class Game {
   table: Array<Card>;
   players: Array<Player>;
   stage: number;
+  iterations: number;
 
   constructor() {
     this.table = [];
     this.players = [];
     this.stage = 0;
+    this.iterations = 1000;
   }
 
   generate(numberOfPlayers: number) {
@@ -354,10 +387,14 @@ class Game {
     g.deck.shuffle();
     g.table = this.table.slice();
     g.stage = this.stage;
-    g.players = this.players.slice().map((p) => {
-      if(p === null) return new Player(g.deck.deal(2));
-      else return p;
-    });
+    g.players = this.players.slice();
+
+    // Since we're in a "copy" of the game, it's a unique
+    // realization of the world, where the players are dealt
+    // a hand. So we'll deal any players without hands in.
+    for(var i=0; i<g.players.length; i++)
+      if(g.players[i].cards.length == 0) g.players[i] = new Player(g.deck.deal(2));
+
     return g;
   }
 
@@ -381,22 +418,33 @@ class Game {
     for(var i=0;i<3;i++) this.advance();
 
     // Check who won.
-    var scores : Array<number> = [];
-    var bestResult : EvaluationResult = {score: 0, cards: [], repr: ""};
-    var myResult = {score: 0, cards: [], repr: ""};
+    var scores : Array<Score> = [];
+    var bestResult : EvaluationResult = {score: new Score(), cards: [], repr: ""};
+    var myResult = {score: new Score(), cards: [], repr: ""};
     for(var i=0;i<this.players.length;i++) {
       var result = evaluateCards(this.players[i].cards.concat(this.table));
       scores.push(result.score);
-      if(i != 0 && result.score > bestResult.score) bestResult = result;
+      if(i != 0 && result.score.isGreaterThan(bestResult.score)) bestResult = result;
       if(i == 0) myResult = result;
     }
 
     var winningHand: EvaluationResult = bestResult;
-    if(myResult.score>bestResult.score)
+    if(myResult.score.isGreaterThan(bestResult.score))
       winningHand = myResult;
 
+    // Compute the score differential. Positive score differential implies
+    // that the player won, zero is a tie, and negative is a loss.
+    var scoreDifferential = 0;
+    if(scores[0].isEqualTo(bestResult.score)) {
+      scoreDifferential = 0;
+    } else if(scores[0].isGreaterThan(bestResult.score)) {
+      scoreDifferential = 1;
+    } else {
+      scoreDifferential = -1;
+    }
+
     return {
-      score: scores[0] - bestResult.score,
+      score: scoreDifferential,
       repr: winningHand.repr + " " + reprCardArray(winningHand.cards),
       hand: winningHand.repr,
       cards: winningHand.cards
@@ -415,7 +463,7 @@ function determineChances(game: Game) : Result {
 
   var winningHands: HandLikelihoodDictionary = {};
   var losingHands:  HandLikelihoodDictionary = {};
-  for(var i=0;i<1000;i++) {
+  for(var i=0;i<game.iterations;i++) {
     var g = game.copy();
     var result = g.getFinalResult();
     if(result.score > 0) wins += 1;
@@ -435,8 +483,8 @@ function determineChances(game: Game) : Result {
 
   var wHand: Array<HandResult> = [];
   var lHand: Array<HandResult> = [];
-  for(var key in winningHands) wHand.push({name: key, probability: winningHands[key] / 1000});
-  for(var key in losingHands)  lHand.push({name: key, probability: losingHands[key] / 1000});
+  for(var key in winningHands) wHand.push({name: key, probability: winningHands[key] / game.iterations});
+  for(var key in losingHands)  lHand.push({name: key, probability: losingHands[key]  / game.iterations});
 
   wHand.sort((a,b) => {
     return b.probability - a.probability;
@@ -446,9 +494,9 @@ function determineChances(game: Game) : Result {
   })
 
   return {
-    win: (wins / 1000),
-    tie: (ties / 1000),
-    loss: (loss / 1000),
+    win: (wins / game.iterations),
+    tie: (ties / game.iterations),
+    loss: (loss / game.iterations),
     winningHands: wHand,
     losingHands: lHand
   }
@@ -460,5 +508,8 @@ module.exports = {
   Game,
   Player,
   Card,
-  makeCards
+  Score,
+  makeCards,
+  Deck,
+  reprCardArray
 };

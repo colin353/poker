@@ -9,11 +9,12 @@ var Poker = require('./poker.js');
 // Flow setup for testing.
 declare var test:any;
 declare var expect:any;
+declare var describe:any;
 
 function assertPrimacy(cards1:string, cards2:string) {
   var result1 = Poker.evaluateCards(Poker.makeCards(cards1));
   var result2 = Poker.evaluateCards(Poker.makeCards(cards2));
-  if(result1.score <= result2.score) throw (
+  if(!result1.score.isGreaterThan(result2.score)) throw (
     "Expected that " + cards1 + " would beat " + cards2 + ", but that didn't happen."
   );
 }
@@ -21,11 +22,23 @@ function assertPrimacy(cards1:string, cards2:string) {
 function assertTie(cards1:string, cards2:string) {
   var result1 = Poker.evaluateCards(Poker.makeCards(cards1));
   var result2 = Poker.evaluateCards(Poker.makeCards(cards2));
-  if(result1.score != result2.score) throw (
+  if(!result1.score.isEqualTo(result2.score)) throw (
     "Expected that " + cards1 + " would tie with " + cards2 + ", but that didn't happen."
   );
 }
 
+test("check score comparison code", () => {
+  var s = new Poker.Score();
+  expect(s.isEqualTo(new Poker.Score())).toBe(true);
+  expect(s.isGreaterThan(new Poker.Score())).toBe(false);
+  s.score[5] = 13;
+  expect(s.isGreaterThan(new Poker.Score())).toBe(true);
+
+  var c = new Poker.Score();
+  c.score[3] = 14;
+  expect(c.isGreaterThan(s)).toBe(true);
+  expect(s.isGreaterThan(c)).toBe(false);
+})
 
 test("check hand generation", () => {
   expect(
@@ -66,3 +79,79 @@ test("test tie handling capability", () => {
   assertTie("AS AD AH AC 5S 3D", "AS AD AH AC 5S 4D");
   assertTie("5S 9D 9H AD AS AH QS", "5S 9D 9H AD AS AH 4D");
 });
+
+function checkOdds(table:string, player:string, stage:number, numberOfPlayers:number, winProbability:number, tieProbability:number) {
+  var g = new Poker.Game();
+  g.generate(numberOfPlayers);
+  g.players[0].cards = Poker.makeCards(player);
+  g.stage = stage;
+  g.table = Poker.makeCards(table);
+  g.iterations = 5000;
+
+  // Since we set the cards, we need to delete the deck and
+  // rebuild it, excluding dealt cards.
+  g.deck = new Poker.Deck();
+  g.deck.generate();
+  g.deck.shuffle();
+
+  expect(g.deck.cards.length).toBe(52);
+  g.deck.cards = g.deck.cards.filter((c) => {
+    return !c.matchesCards(Poker.makeCards(table + " " + player));
+  });
+
+  var result = Poker.determineChances(g);
+
+  // Determine the acceptable range using 2-sigma error tolerance.
+  expect(result.win).toBeLessThan(   winProbability + (3 * Math.sqrt(g.iterations * winProbability) / g.iterations))
+  expect(result.win).toBeGreaterThan(winProbability - (3 * Math.sqrt(g.iterations * winProbability) / g.iterations))
+
+  expect(result.tie).toBeLessThan(   tieProbability + (3 * Math.sqrt(g.iterations * tieProbability) / g.iterations));
+  expect(result.tie).toBeGreaterThan(tieProbability - (3 * Math.sqrt(g.iterations * tieProbability) / g.iterations));
+
+}
+
+test("test a definite tie situation", () => {
+  var g = new Poker.Game();
+  g.generate(2);
+  g.stage = 3;
+  g.table = Poker.makeCards("AS AD AH AC KS");
+  g.players[0].cards = Poker.makeCards("3S 4H");
+  g.players[1].cards = Poker.makeCards("5S 6H");
+
+  var result = Poker.determineChances(g);
+
+  expect(result.win).toBe(0);
+  expect(result.loss).toBe(0);
+  expect(result.tie).toBeCloseTo(1.0);
+});
+
+test("test pocket aces odds", () => {
+  var g = new Poker.Game();
+  g.generate(4);
+  g.players[0].cards = Poker.makeCards("AS AH");
+
+  // Remove the two aces from the deck (important for the calculation
+  // to accurately represent the number of ties).
+  g.deck.cards = g.deck.cards.filter((c) => {
+    return !c.matchesCards(Poker.makeCards("AS AH"));
+  });
+
+  var result = Poker.determineChances(g);
+
+  expect(result.win).toBeGreaterThan(0.589);
+  expect(result.win).toBeLessThan(0.69);
+  expect(result.tie).toBeGreaterThan(0);
+  expect(result.tie).toBeLessThan(0.009);
+});
+
+test("that the match function works correctly", () => {
+  var c = Poker.makeCards("KH 10C 7S")[0];
+  expect(c.matchesCards(Poker.makeCards("JS KH 5C"))).toBeTruthy();
+});
+
+test("calculating odds for known hands", () => {
+  checkOdds("KH 10C 7S", "9C 5C", 1, 3, 0.1455, 0.033);
+  checkOdds("10S 10H 2H", "QH 5D", 1, 4, 0.1429, 0.035);
+  checkOdds("10S 10H QC", "QH 5D", 1, 4, 0.4327, 0.102);
+  checkOdds("10S 10H KS KH", "QH 5D", 1, 4, 0.1260, 0.1690);
+})

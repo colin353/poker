@@ -21,6 +21,7 @@ import {
 import State from './app/game/state';
 // The tools for evaluating poker hands, dealing, etc.
 import Poker from './app/poker.js';
+import type { HandResult } from './app/poker.js'
 // Tools for generating questions and answers.
 import { GenerateQuestion, Problem } from './app/game/questions';
 
@@ -30,7 +31,7 @@ import Header from './app/components/header';
 
 class poker_app extends Component {
   state: {
-    table: Array<Poker.Player>,
+    table: Array<Poker.Card>,
     question: Poker.Question,
     level: number,
     players: number,
@@ -40,8 +41,8 @@ class poker_app extends Component {
     pointsWon: number,
     popOver: boolean,
     player: Poker.Player,
-    losingHands: Array<Poker.HandResult>,
-    winningHands: Array<Poker.HandResult>
+    losingHands: Array<HandResult>,
+    winningHands: Array<HandResult>
   };
   question: Problem;
   gameState: State;
@@ -51,7 +52,7 @@ class poker_app extends Component {
     this.state = {
       question: "",
       table: [],
-      player: {cards:[]},
+      player: { cards:[] },
       players: 2,
       percent: 0,
       showAnswer: false,
