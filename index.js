@@ -17,7 +17,7 @@
  * https://coolors.co/1a090d-4a314d-6b6570-a8ba9a-ace894
  */
 
-import { Component } from 'react';
+import React, { Component } from 'react';
 import {
   AppRegistry,
   StyleSheet,
