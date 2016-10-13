@@ -11,7 +11,8 @@ import {
   Text,
   View,
   TouchableHighlight,
-  Slider
+  Slider,
+  Dimensions
 } from 'react-native';
 
 // The machinery to save the app state.
@@ -133,9 +134,16 @@ class Game extends Component {
 
   render() {
     var percent = Math.round(this.state.percent/5)*5;
+
+    var windowHeight = Dimensions.get('window').height;
+    var smallMode = windowHeight < 600;
+    var verySmallMode = windowHeight < 500;
+
     return (
       <View style={{flexDirection: 'column', flex: 1}}>
-      <Header progress={this.state.points/1000} level={this.state.level} />
+      {verySmallMode&&!this.state.showAnswer?(<View style={{height: 40, backgroundColor: "#848484"}}></View>):(
+        <Header progress={this.state.points/1000} level={this.state.level} />
+      )}
       <View style={styles.container}>
 
       <View style={styles.question}>
@@ -168,7 +176,7 @@ class Game extends Component {
           })}
 
           <View style={styles.opponent}>
-            <Text style={styles.opponentText}>with</Text>
+            {smallMode?[]:(<Text style={styles.opponentText}>with</Text>)}
             <Text style={styles.opponentTextNumber}>{this.state.players}</Text>
             <Text style={styles.opponentText}>player{this.state.players==1?'':'s'}</Text>
           </View>
@@ -178,35 +186,36 @@ class Game extends Component {
 
       {this.state.showAnswer?(
         <View style={{alignItems: 'center', justifyContent: 'center'}}>
-        <View style={styles.tabularRow}>
+        {verySmallMode?[]:(
+          <View style={styles.tabularRow}>
 
-          <View style={styles.tabularColumn}>
-          <Text style={styles.winMessage}>You win/tie by:</Text>
-          {this.state.winningHands.slice(0,3).map((hand, i) => {
-            return (
-              <View key={i} style={styles.row}>
-                <Text>{hand.name}</Text>
-                <View style={{flex: 1}}></View>
-                <Text style={{fontWeight: 'bold'}}>{Math.floor(100*hand.probability)}%</Text>
-              </View>
-            );
-          })}
-          </View>
+            <View style={styles.tabularColumn}>
+            <Text style={styles.winMessage}>You win/tie by:</Text>
+            {this.state.winningHands.slice(0,3).map((hand, i) => {
+              return (
+                <View key={i} style={styles.row}>
+                  <Text>{hand.name}</Text>
+                  <View style={{flex: 1}}></View>
+                  <Text style={{fontWeight: 'bold'}}>{Math.floor(100*hand.probability)}%</Text>
+                </View>
+              );
+            })}
+            </View>
 
-          <View style={styles.tabularColumn}>
-          <Text style={styles.winMessage}>You lose to:</Text>
-          {this.state.losingHands.slice(0,3).map((hand, i) => {
-            return (
-              <View key={i} style={styles.row}>
-                <Text>{hand.name}</Text>
-                <View style={{flex: 1}}></View>
-                <Text style={{fontWeight: 'bold'}}>{Math.floor(100*hand.probability)}%</Text>
-              </View>
-            );
-          })}
-          </View>
-          </View>
-
+            <View style={styles.tabularColumn}>
+            <Text style={styles.winMessage}>You lose to:</Text>
+            {this.state.losingHands.slice(0,3).map((hand, i) => {
+              return (
+                <View key={i} style={styles.row}>
+                  <Text>{hand.name}</Text>
+                  <View style={{flex: 1}}></View>
+                  <Text style={{fontWeight: 'bold'}}>{Math.floor(100*hand.probability)}%</Text>
+                </View>
+              );
+            })}
+            </View>
+            </View>
+        )}
           <TouchableHighlight onPress={this.nextQuestion.bind(this)}>
             <View style={[styles.button, {width: 150}]}>
               <Text style={styles.buttonText}>Next</Text>
@@ -214,10 +223,10 @@ class Game extends Component {
           </TouchableHighlight>
         </View>
       ):(
-        <View>
-          <TouchableHighlight onPress={this.answer.bind(this)}>
-            <View style={[styles.button, {width: 320}]}>
-              <Text style={styles.buttonText}>There's a{String(percent)[0]=='8'?'n':''} <Text style={styles.boldButtonText}>{percent}% chance</Text>.</Text>
+        <View style={{}}>
+          <TouchableHighlight style={{flex: 1, minWidth: 320}} onPress={this.answer.bind(this)}>
+            <View style={[styles.button, {flex: 1, marginHorizontal: 5}]}>
+              <Text numberOfLines={1} style={styles.buttonText}>There's a{String(percent)[0]=='8'?'n':''} <Text style={styles.boldButtonText}>{percent}% chance</Text>.</Text>
             </View>
           </TouchableHighlight>
 
@@ -241,7 +250,7 @@ class Game extends Component {
       ):[]}
 
       {this.state.popOver?(
-        <View style={styles.popover}>
+        <View style={[styles.popover, {top: 0.5*windowHeight - 150}]}>
 
           <Text style={{fontSize: 24, textAlign: 'center'}}>Nice work! You've reached level {this.state.level}!</Text>
 
@@ -258,8 +267,6 @@ class Game extends Component {
     );
   }
 }
-
-
 
 const styles = StyleSheet.create({
   container: {
@@ -358,7 +365,8 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 24,
     color: 'white',
-    textAlign: 'center'
+    textAlign: 'center',
+    flex: 1
   },
   boldButtonText: {
     fontSize: 24,

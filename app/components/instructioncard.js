@@ -8,7 +8,8 @@ import React, { Component } from 'react';
 import {
   StyleSheet,
   View,
-  Text
+  Text,
+  Dimensions
 } from 'react-native';
 
 class InstructionCard extends Component {
@@ -17,8 +18,9 @@ class InstructionCard extends Component {
   }
 
   render() {
+    var smallMode = Dimensions.get('window').height < 600;
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, smallMode?{height: 300}:{}]}>
         <View style={styles.labelBadge}>
           <Text style={styles.labelBadgeText}>{this.props.level}</Text>
         </View>

@@ -12,6 +12,7 @@ import {
   View,
   Text,
   Animated,
+  Dimensions
 } from 'react-native';
 
 type Props = {
@@ -64,19 +65,20 @@ class Header extends Component {
   }
 
   render() {
+    var windowWidth = Dimensions.get('window').width;
     return (
       <View style={styles.container}>
         <View style={styles.labelBadge}>
           <Text style={styles.labelBadgeText}>{this.props.level}</Text>
         </View>
-        <View style={styles.progressContainer}>
+        <View style={[styles.progressContainer, {width: windowWidth-100}]}>
           <Text style={styles.textProgress}>{this.state.progressText}/1000</Text>
           <Animated.View
             style={[
               styles.progress,
               { width: this.state.progress.interpolate({
                   inputRange  : [0, 1],
-                  outputRange : [0, 275]
+                  outputRange : [0, windowWidth-100 ]
                 })
               }]
             }>

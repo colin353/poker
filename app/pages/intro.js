@@ -10,7 +10,8 @@ import {
   StyleSheet,
   View,
   Slider,
-  Text
+  Text,
+  Dimensions
 } from 'react-native';
 
 import InstructionCard from '../components/instructioncard';
@@ -34,6 +35,8 @@ class Intro extends Component {
   }
 
   renderCard(index: number) {
+    var smallMode = Dimensions.get('window').height < 600;
+
     return [(
       <InstructionCard level={1}>
         <View style={styles.cards}>
@@ -41,7 +44,7 @@ class Intro extends Component {
             return <Card key={i} card={c} />;
           })}
         </View>
-        <Text style={styles.instructionText}>
+        <Text style={[styles.instructionText, smallMode?{fontSize: 20}:{}]}>
           Train yourself to evaluate the strength
           of a poker hand.
         </Text>
@@ -53,7 +56,7 @@ class Intro extends Component {
             What's the probability that you'll win?
           </Text>
         </View>
-        <Text style={styles.instructionText}>
+        <Text style={[styles.instructionText, smallMode?{fontSize: 20}:{}]}>
           You'll be asked a question about probabilities.
         </Text>
       </InstructionCard>
@@ -70,7 +73,7 @@ class Intro extends Component {
             value={this.state.percent}
           />
         </View>
-        <Text style={styles.instructionText}>
+        <Text style={[styles.instructionText, smallMode?{marginTop: -20,fontSize: 20}:{}]}>
           Use the slider to enter your answer.
         </Text>
       </InstructionCard>
