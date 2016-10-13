@@ -28,6 +28,10 @@ class Card extends Component {
   }
 }
 
+Card.propTypes = {
+  card: React.PropTypes.object.isRequired
+};
+
 // The CardPlaceholder represents a card which hasn't been dealt/revealed yet.
 class CardPlaceholder extends Component {
   render() {

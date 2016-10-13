@@ -1,5 +1,6 @@
 /*
   intro.js
+  @flow
 
   Intro page, which gives a brief tutorial on the app.
 */
@@ -25,7 +26,7 @@ class Intro extends Component {
   };
   cards: Array<Poker.Card>;
 
-  constructor(props) {
+  constructor(props: any) {
     super(props);
     this.state = {
       page: 0,
@@ -101,6 +102,10 @@ class Intro extends Component {
     );
   }
 }
+
+Intro.propTypes = {
+  startGame: React.PropTypes.func.isRequired
+};
 
 const styles = StyleSheet.create({
   container: {

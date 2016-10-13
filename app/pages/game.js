@@ -268,6 +268,10 @@ class Game extends Component {
   }
 }
 
+Game.propTypes = {
+  gameState: React.PropTypes.object.isRequired
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,

@@ -1,5 +1,6 @@
 /*
   instructioncard.js
+  @flow
 
   Shows an instruction on how to play the game.
 */
@@ -13,7 +14,7 @@ import {
 } from 'react-native';
 
 class InstructionCard extends Component {
-  constructor(props) {
+  constructor(props: any) {
     super(props);
   }
 
@@ -29,6 +30,10 @@ class InstructionCard extends Component {
     );
   }
 }
+
+InstructionCard.propTypes = {
+  level: React.PropTypes.number.isRequired
+};
 
 const styles = StyleSheet.create({
   container: {

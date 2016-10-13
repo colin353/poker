@@ -27,7 +27,7 @@ class Header extends Component {
     progressTextAnimator: Animated.Value,
     progressText: string
   }
-  animationInProgress: Animated.Timing
+  animationInProgress: Animated.Timing;
 
   constructor(props: Props) {
     super(props);
