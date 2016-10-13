@@ -1,7 +1,9 @@
 /*
   home.js
-
   @flow
+
+  This page lets the user click "start" before being thrown into the quiz. Also,
+  if it's the user's first time, they get a brief tutorial.
 */
 
 import React, { Component } from 'react';
@@ -9,14 +11,15 @@ import {
   TouchableOpacity,
   StyleSheet,
   View,
+  Dimensions,
   Text,
   Image
 } from 'react-native';
 
 class Home extends Component {
   state: {
-    level: number,
-    savedGameExists: boolean
+    level: number,            // which level the user is
+    savedGameExists: boolean  // whether the user has played before.
   }
   constructor(props: any) {
     super(props);
@@ -27,6 +30,8 @@ class Home extends Component {
     };
   }
 
+  // When the page mounts, we'll load the game state. If the user is advanced
+  // beyond zero points on level 1, we'll give them the tutorial.
   componentWillMount() {
     this.props.gameState.load().then(() => {
       if(this.props.gameState.score > 0 || this.props.gameState.level > 1)
@@ -38,6 +43,7 @@ class Home extends Component {
   }
 
   render() {
+    var {height, width} = Dimensions.get('window');
     return (
       <View style={styles.container}>
         <View style={styles.title}>
@@ -45,7 +51,7 @@ class Home extends Component {
           <Text style={styles.subtitle}>"always tell me the odds!"</Text>
         </View>
 
-        <TouchableOpacity style={{marginTop: 175}} onPress={this.state.savedGameExists?this.props.startGame:this.props.startIntro}>
+        <TouchableOpacity style={{marginTop: height*0.5-170}} onPress={this.state.savedGameExists?this.props.startGame:this.props.startIntro}>
           {!this.state.savedGameExists?(
             <View style={styles.newGame}>
               <Text style={styles.newGameText}>Start new game</Text>
