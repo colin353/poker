@@ -104,7 +104,6 @@ function makeCards(string: string): Array<Card> {
   return cards;
 }
 
-
 // The score class requires a bit of explaining. Because there are so many ways to
 // win in poker, and each method has degrees of winning (i.e. a pair of twos loses to
 // a pair of fives), computing a single numerical score for a hand is pretty hard to
@@ -219,7 +218,6 @@ class Deck {
     d.cards = this.cards.slice();
     return d;
   }
-
 
   // This function emits a number of cards, and removes them
   // from the deck.

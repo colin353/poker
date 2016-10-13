@@ -43,7 +43,6 @@ class Game extends Component {
   };
 
   question: Problem;
-  gameState: State;
 
   constructor(props: any) {
     super(props);
@@ -65,11 +64,10 @@ class Game extends Component {
 
   componentDidMount() {
     // Load the saved state.
-    this.gameState = new State();
-    this.gameState.load().then(() => {
+    this.props.gameState.load().then(() => {
       this.setState({
-        level : this.gameState.level,
-        points: this.gameState.score
+        level : this.props.gameState.level,
+        points: this.props.gameState.score
       });
       this.generateQuestion(this.state.level);
     });
@@ -82,9 +80,9 @@ class Game extends Component {
     this.question = GenerateQuestion(level);
     this.setState(this.question.question);
     this.setState({
-      showAnswer: false,
+      showAnswer: false
     });
-    this.gameState.save();
+    this.props.gameState.save();
   }
 
   // This function is called when the user decides to submit their answer. It
@@ -96,31 +94,31 @@ class Game extends Component {
 
     // Figure out if the person has increased by one level.
     if(this.state.points + pointsWon > 1000) {
-      this.gameState.score += pointsWon - 1000;
-      this.gameState.level += 1;
+      this.props.gameState.score += pointsWon - 1000;
+      this.props.gameState.level += 1;
       this.setState({popOver: true});
     }
     else if(this.state.points + pointsWon < 0) {
       // If they lose down to zero points and continue to lose
       // they'll lose the level and go down one. Otherwise,
       // they'll just go to zero points.
-      if(this.state.points > 0 || this.gameState.level == 1) this.gameState.score = 0;
+      if(this.state.points > 0 || this.props.gameState.level == 1) this.props.gameState.score = 0;
       else {
-        this.gameState.score += 1000 + pointsWon;
-        this.gameState.level = Math.max(1, this.gameState.level - 1);
+        this.props.gameState.score += 1000 + pointsWon;
+        this.props.gameState.level = Math.max(1, this.props.gameState.level - 1);
       }
     }
     else {
-      this.gameState.score += pointsWon;
+      this.props.gameState.score += pointsWon;
     }
 
     this.setState({
       showAnswer: true,
       pointsWon,
-      points: this.gameState.score,
-      level: this.gameState.level
+      points: this.props.gameState.score,
+      level: this.props.gameState.level
     });
-    this.gameState.save();
+    this.props.gameState.save();
   }
 
   hidePopover() {
@@ -130,7 +128,7 @@ class Game extends Component {
   // This function generates a new question for the user, with a difficulty
   // adjusted for the current level.
   nextQuestion() {
-    this.generateQuestion(this.gameState.level);
+    this.generateQuestion(this.props.gameState.level);
   }
 
   render() {
@@ -207,7 +205,6 @@ class Game extends Component {
             );
           })}
           </View>
-
           </View>
 
           <TouchableHighlight onPress={this.nextQuestion.bind(this)}>

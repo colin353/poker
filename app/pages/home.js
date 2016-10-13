@@ -6,13 +6,37 @@
 
 import React, { Component } from 'react';
 import {
-  TouchableHighlight,
+  TouchableOpacity,
   StyleSheet,
   View,
-  Text
+  Text,
+  Image
 } from 'react-native';
 
 class Home extends Component {
+  state: {
+    level: number,
+    savedGameExists: boolean
+  }
+  constructor(props: any) {
+    super(props);
+
+    this.state = {
+      level: 0,
+      savedGameExists: false
+    };
+  }
+
+  componentWillMount() {
+    this.props.gameState.load().then(() => {
+      if(this.props.gameState.score > 0 || this.props.gameState.level > 1)
+        this.setState({
+          savedGameExists: true,
+          level: this.props.gameState.level
+        });
+    });
+  }
+
   render() {
     return (
       <View style={styles.container}>
@@ -21,11 +45,24 @@ class Home extends Component {
           <Text style={styles.subtitle}>"always tell me the odds!"</Text>
         </View>
 
-        <TouchableHighlight onPress={this.props.startGame}>
-          <View style={styles.newGame}>
-            <Text style={styles.newGameText}>Start new game</Text>
-          </View>
-        </TouchableHighlight>
+        <TouchableOpacity style={{marginTop: 175}} onPress={this.state.savedGameExists?this.props.startGame:this.props.startIntro}>
+          {!this.state.savedGameExists?(
+            <View style={styles.newGame}>
+              <Text style={styles.newGameText}>Start new game</Text>
+            </View>
+          ):(
+            <View style={styles.existingGame}>
+              <View style={styles.medal}>
+                <Image style={{width: 50, height: 65}} source={require('../../assets/medal.png')} />
+                <Text style={styles.levelText}>{this.state.level}</Text>
+              </View>
+              <View>
+                <Text style={styles.existingGameText}>Continue</Text>
+                <Text style={styles.existingGameSubText}>Level {this.state.level}</Text>
+              </View>
+            </View>
+          )}
+        </TouchableOpacity>
       </View>
     );
   }
@@ -56,7 +93,6 @@ const styles = StyleSheet.create({
     fontStyle: 'italic'
   },
   newGame: {
-    marginTop: 200,
     alignItems: 'center',
     justifyContent: 'center',
     height: 100,
@@ -67,9 +103,44 @@ const styles = StyleSheet.create({
     borderColor: '#AAA',
     borderStyle: 'dashed'
   },
+  existingGame: {
+    flexDirection: 'row',
+    backgroundColor: '#FFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 120,
+    marginLeft: 20,
+    marginRight: 20,
+    borderRadius: 5,
+    shadowColor: '#333',
+    shadowRadius: 2,
+    shadowOpacity: 1,
+    shadowOffset: { height: 1, width: 1 }
+  },
+  existingGameText: {
+    fontSize: 24,
+    fontWeight: "600",
+    color: 'black'
+  },
   newGameText: {
     fontSize: 24,
     color: 'white'
+  },
+  medal: {
+    marginRight: 80,
+    marginTop: -10
+  },
+  levelText: {
+    fontWeight: "600",
+    textAlign: 'center',
+    fontSize: 32,
+    marginTop: -59,
+    backgroundColor: 'transparent'
+  },
+  existingGameSubText: {
+    fontSize: 16,
+    color: "#888",
+    textAlign: 'center'
   }
 });
 

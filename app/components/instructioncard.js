@@ -20,7 +20,7 @@ class InstructionCard extends Component {
     return (
       <View style={styles.container}>
         <View style={styles.labelBadge}>
-          <Text style={styles.labelBadgeText}>1</Text>
+          <Text style={styles.labelBadgeText}>{this.props.level}</Text>
         </View>
         {this.props.children}
       </View>
@@ -34,7 +34,12 @@ const styles = StyleSheet.create({
     marginLeft: 20,
     marginRight: 20,
     height: 400,
-    borderRadius: 5
+    borderRadius: 5,
+    paddingHorizontal: 20,
+    shadowColor: '#333',
+    shadowRadius: 2,
+    shadowOpacity: 1,
+    shadowOffset: { height: 1, width: 1 }
   },
   labelBadge: {
     marginTop: 10,
@@ -45,7 +50,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     height: 40,
-    marginLeft: 20
+    marginLeft: 0
   },
   labelBadgeText: {
     fontSize: 18,

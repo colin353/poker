@@ -26,26 +26,37 @@ import Game from './app/pages/game.js';
 import Home from './app/pages/home.js';
 import Intro from './app/pages/intro.js';
 
+// The machinery to save the app state.
+import State from './app/game/state';
+
 class PokerApp extends Component {
   state: {
     page: string
   }
+  gameState: State;
 
   constructor(props) {
     super(props);
     this.state = {
-      page: "home"
+      page : "home",
     };
+
+    // Load the saved game.
+    this.gameState = new State();
   }
 
   startGame() {
+    this.setState({page: "game"});
+  }
+
+  startIntro() {
     this.setState({page: "intro"});
   }
 
   render() {
-    if(this.state.page == 'home') return <Home startGame={this.startGame.bind(this)} />;
+    if(this.state.page == 'home') return <Home gameState={this.gameState} startIntro={this.startIntro.bind(this)} startGame={this.startGame.bind(this)} />;
     if(this.state.page == 'intro') return <Intro startGame={this.startGame.bind(this)}/>;
-    else if(this.state.page == 'game') return <Game />;
+    else if(this.state.page == 'game') return <Game gameState={this.gameState} />;
   }
 }
 
